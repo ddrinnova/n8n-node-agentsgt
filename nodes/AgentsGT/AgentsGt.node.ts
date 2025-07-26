@@ -28,7 +28,7 @@ export class AgentsGT implements INodeType {
 			},
 		],
 		requestDefaults: {
-			baseURL: 'https://agentsgt.com/api/v1',
+			baseURL: '={{$credentials.baseUrl}}',
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
@@ -231,8 +231,7 @@ export class AgentsGT implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		// Get credentials
-		const credentials = await this.getCredentials('agentsGTApi');
-		const apiKey = `${credentials.publicKey}:${credentials.secretKey}`;
+		await this.getCredentials('agentsGTApi');
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -246,11 +245,6 @@ export class AgentsGT implements INodeType {
 							{
 								method: 'GET',
 								url: '/agents',
-								headers: {
-									'Authorization': `Bearer ${apiKey}`,
-									'Accept': 'application/json',
-									'Content-Type': 'application/json',
-								},
 							},
 						);
 					}
@@ -323,11 +317,6 @@ export class AgentsGT implements INodeType {
 							{
 								method: 'POST',
 								url: endpoint,
-								headers: {
-									'Authorization': `Bearer ${apiKey}`,
-									'Accept': 'application/json',
-									'Content-Type': 'application/json',
-								},
 								body: requestBody,
 							},
 						);
@@ -338,11 +327,7 @@ export class AgentsGT implements INodeType {
 						const agentId = this.getNodeParameter('agentId', i) as string;
 
 						let endpoint = '/agents/check-balance';
-						const headers: any = {
-							'Authorization': `Bearer ${apiKey}`,
-							'Accept': 'application/json',
-							'Content-Type': 'application/json',
-						};
+						const headers: any = {};
 
 						// If agent ID is provided, check specific agent balance
 						if (agentId) {
@@ -360,7 +345,7 @@ export class AgentsGT implements INodeType {
 							{
 								method: 'GET',
 								url: endpoint,
-								headers,
+								headers: Object.keys(headers).length > 0 ? headers : undefined,
 							},
 						);
 					}

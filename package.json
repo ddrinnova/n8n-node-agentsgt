@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-agentsgt",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "n8n node for interacting with AgentsGT AI agents via the v1 API",
   "keywords": [
     "n8n-community-node-package",

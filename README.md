@@ -2,91 +2,84 @@
 
 ![AgentsGT Logo](https://agentsgt.com/assets/logo.png)
 
-An n8n community node for interacting with AgentsGT AI agents via the v1 API.
+This is an n8n community node that allows you to integrate AgentsGT AI agents into your n8n workflows. With this node, you can leverage powerful AI agents to automate tasks, analyze data, generate content, and more.
+
+[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
+
+[Installation](#installation)  
+[Configuration](#configuration)  
+[Resources and Operations](#resources-and-operations)  
+[Usage Examples](#usage-examples)  
+[Troubleshooting](#troubleshooting)  
+[Resources](#resources)  
+[License](#license)  
 
 ## Installation
 
-To install this node in your n8n instance:
-
 ### Community Nodes (Recommended)
 
-1. Go to **Settings > Community Nodes** in your n8n instance
-2. Click **Install a community node**
-3. Enter `n8n-nodes-agentsgt`
-4. Click **Install**
+1. Open your n8n instance
+2. Go to **Settings > Community Nodes**
+3. Click **Install a community node**
+4. Enter `n8n-nodes-agentsgt`
+5. Click **Install**
 
 ### Manual Installation
 
 ```bash
-# In your n8n root directory
+# Navigate to your n8n installation directory
+cd /path/to/your/n8n
+
+# Install the package
 npm install n8n-nodes-agentsgt
+
+# Restart n8n
+npm restart
 ```
 
 ## Configuration
 
-### Credentials
+### API Credentials
 
-Before using the AgentsGT node, you need to configure your API credentials:
+Before using the AgentsGT node, you need to set up your API credentials:
 
-1. Go to **Credentials** in your n8n instance
+1. Log in to your [AgentsGT dashboard](https://agentsgt.com)
+2. Navigate to **Account > API Keys**
+3. Create a new API key pair
+4. Copy both the **Public Key** (starts with `pk_`) and **Secret Key** (starts with `sk_`)
+
+### Setting Up Credentials in n8n
+
+1. In n8n, go to **Credentials**
 2. Click **Create New Credential**
-3. Select **AgentsGT API**
-4. Fill in your credentials:
-   - **Public Key**: Your AgentsGT public API key (starts with `pk_`)
-   - **Secret Key**: Your AgentsGT secret API key (starts with `sk_`)
+3. Search for and select **AgentsGT API**
+4. Fill in the required fields:
+   - **Public Key**: Your `pk_` key
+   - **Secret Key**: Your `sk_` key
    - **Base URL**: `https://agentsgt.com/api/v1` (default)
+5. Click **Save**
 
-You can obtain your API keys from your [AgentsGT dashboard](https://agentsgt.com/account/api-keys).
-
-## Usage
+## Resources and Operations
 
 The AgentsGT node supports three main resources:
 
-### 1. Agent Operations
+### 1. Agent Resource
 
-#### Get All Agents
-Retrieve all agents in your organization.
+#### Get Many
+Retrieves all agents available in your organization.
 
 **Parameters:**
-- Resource: `Agent`
-- Operation: `Get All`
+- None required
 
 **Output:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "agent-123",
-      "name": "Customer Support Agent",
-      "description": "AI agent specialized in customer support",
-      "system_prompt": "You are a helpful customer support agent...",
-      "slug": "customer-support-agent",
-      "model": {
-        "name": "gpt-4",
-        "display_name": "GPT-4",
-        "pricing": {
-          "input_per_1k_tokens": 0.03,
-          "output_per_1k_tokens": 0.06
-        },
-        "context_window": 8192
-      },
-      "created_at": "2025-01-01T00:00:00Z",
-      "updated_at": "2025-01-01T00:00:00Z",
-      "url": "https://agentsgt.com/api/v1/agents/basic/agent-123"
-    }
-  ]
-}
-```
+Returns an array of agent objects with details such as ID, name, description, model information, etc.
 
-### 2. Chat Operations
+### 2. Chat Resource
 
 #### Send Message
-Send a message to an AI agent and receive a response.
+Sends a message to an AI agent and returns the agent's response.
 
 **Parameters:**
-- Resource: `Chat`
-- Operation: `Send Message`
 - **Agent ID**: The ID of the agent to chat with
 - **Message**: The message to send to the agent
 - **Session Identifier**: Unique identifier for the conversation session
@@ -95,98 +88,136 @@ Send a message to an AI agent and receive a response.
   - `Advanced`: Advanced chat with streaming support
   - `CopilotKit`: CopilotKit framework integration
 
-**Example:**
-```json
-{
-  "agentId": "agent-123",
-  "message": "Hello, how can you help me?",
-  "identifier": "user-456-session-789",
-  "chatType": "basic"
-}
-```
+**Output:**
+Returns the agent's response to your message.
 
-**Output (Basic Chat):**
-```json
-{
-  "success": true,
-  "response": "Hello! I'm here to help you with any questions or tasks you might have. What can I assist you with today?"
-}
-```
-
-### 3. Balance Operations
+### 3. Balance Resource
 
 #### Check Balance
-Verify organization credits and subscription status.
+Verifies your organization's credit balance and subscription status.
 
 **Parameters:**
-- Resource: `Balance`
-- Operation: `Check Balance`
-- **Organization ID**: Organization ID for balance check (optional)
-- **Agent ID**: Agent ID for specific agent balance check (optional)
+- **Organization ID**: (Optional) Specific organization ID for balance check
+- **Agent ID**: (Optional) Specific agent ID for agent-specific balance check
 
 **Output:**
-```json
-{
-  "success": true,
-  "organizationId": "org-123",
-  "hasCredits": true,
-  "hasAssistant": true
-}
+Returns information about your account status, including organization ID, credit availability, and subscription status.
+
+## Usage Examples
+
+### Example 1: Basic Agent Interaction
+
+This workflow demonstrates how to retrieve agents and chat with a specific agent:
+
+1. **Start Node** → **AgentsGT: Get Agents** → **Set Variable** (to store agent ID) → **AgentsGT: Send Message** → **Process Response**
+
+Configuration:
+```
+[AgentsGT: Get Agents]
+Resource: Agent
+Operation: Get Many
+
+[Set Variable]
+Name: agentId
+Value: {{ $node["AgentsGT: Get Agents"].json.data[0].id }}
+
+[AgentsGT: Send Message]
+Resource: Chat
+Operation: Send Message
+Agent ID: {{ $vars.agentId }}
+Message: Hello, can you help me analyze this data?
+Session Identifier: workflow-{{$workflow.id}}-{{$execution.id}}
+Chat Type: basic
 ```
 
-## Examples
+### Example 2: Data Analysis Workflow
 
-### Basic Workflow Example
+This workflow uses an AI agent to analyze data from an HTTP request:
 
-1. **Get All Agents**: Use the Agent > Get All operation to retrieve your available agents
-2. **Extract Agent ID**: Use a Set node to extract the agent ID from the response
-3. **Send Message**: Use the Chat > Send Message operation with the extracted agent ID
-4. **Process Response**: Handle the agent's response in subsequent nodes
+1. **HTTP Request** → **AgentsGT: Send Message** → **Send Email**
 
-### Advanced Integration Example
+Configuration:
+```
+[HTTP Request]
+URL: https://api.example.com/data
+Method: GET
 
-```json
-{
-  "nodes": [
-    {
-      "name": "Get Agents",
-      "type": "n8n-nodes-agentsgt.agentsGT",
-      "parameters": {
-        "resource": "agent",
-        "operation": "getAll"
-      }
-    },
-    {
-      "name": "Chat with Agent",
-      "type": "n8n-nodes-agentsgt.agentsGT",
-      "parameters": {
-        "resource": "chat",
-        "operation": "sendMessage",
-        "agentId": "{{ $json.data[0].id }}",
-        "message": "Analyze this data: {{ $json.inputData }}",
-        "identifier": "workflow-{{ $workflow.id }}-{{ $execution.id }}",
-        "chatType": "basic"
-      }
-    }
-  ]
-}
+[AgentsGT: Send Message]
+Resource: Chat
+Operation: Send Message
+Agent ID: agent-data-analysis-123
+Message: Please analyze this data and provide insights: {{ $json.body | json }}
+Session Identifier: analysis-{{$execution.id}}
+Chat Type: basic
+
+[Send Email]
+To: user@example.com
+Subject: Data Analysis Results
+Body: {{ $node["AgentsGT: Send Message"].json.response }}
 ```
 
-## Error Handling
+### Example 3: Content Generation Pipeline
 
-The node includes comprehensive error handling:
+This workflow generates content using an AI agent and posts it to a CMS:
 
-- **401 Unauthorized**: Invalid or inactive API key
-- **402 Payment Required**: Insufficient credits or inactive subscription
-- **404 Not Found**: Agent not found or unauthorized
-- **429 Too Many Requests**: Rate limit exceeded
-- **500 Internal Server Error**: Server-side error
+1. **Schedule Trigger** → **AgentsGT: Send Message** → **WordPress: Create Post**
 
-Enable "Continue on Fail" in the node settings to handle errors gracefully in your workflows.
+Configuration:
+```
+[Schedule Trigger]
+Frequency: Weekly
 
-## API Documentation
+[AgentsGT: Send Message]
+Resource: Chat
+Operation: Send Message
+Agent ID: agent-content-creation-456
+Message: Generate a blog post about the latest trends in AI technology
+Session Identifier: content-{{$execution.id}}
+Chat Type: basic
 
-For detailed API documentation, visit: [https://agentsgt.com/documentation/v1](https://agentsgt.com/documentation/v1)
+[WordPress: Create Post]
+Title: AI Trends - Weekly Update
+Content: {{ $node["AgentsGT: Send Message"].json.response }}
+Status: publish
+```
+
+## Troubleshooting
+
+### Common Issues and Solutions
+
+1. **Authentication Errors (401)**
+   - Verify your API credentials are correct
+   - Check if your API keys are active in the AgentsGT dashboard
+
+2. **Payment Required Errors (402)**
+   - Verify your account has sufficient credits
+   - Check your subscription status in the AgentsGT dashboard
+
+3. **Not Found Errors (404)**
+   - Confirm the Agent ID exists and is accessible to your account
+   - Verify the API endpoint URLs
+
+4. **Rate Limit Errors (429)**
+   - Implement retry logic with exponential backoff
+   - Reduce the frequency of API calls
+
+5. **Server Errors (500)**
+   - Check the AgentsGT status page for service disruptions
+   - Contact AgentsGT support if the issue persists
+
+### Debugging Tips
+
+- Enable "Continue on Fail" in node settings to prevent workflow failures
+- Use the "Debug" tab in n8n to inspect input/output data
+- Add Function nodes to log detailed information during execution
+
+## Resources
+
+- [n8n Community Nodes Documentation](https://docs.n8n.io/integrations/community-nodes/)
+- [AgentsGT API Documentation](https://agentsgt.com/documentation/v1)
+- [AgentsGT Website](https://agentsgt.com)
+- [Detailed Usage Guide](./README_USAGE.md)
+- [Installation Guide](./INSTALLATION.md)
 
 ## Support
 
@@ -196,12 +227,4 @@ For detailed API documentation, visit: [https://agentsgt.com/documentation/v1](h
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Please read our contributing guidelines and submit pull requests to our GitHub repository.
-
----
-
-Made with ❤️ by the [AgentsGT](https://agentsgt.com) team.
+[MIT](LICENSE)
